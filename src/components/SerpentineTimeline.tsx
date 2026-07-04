@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, Eye, FileText, Calendar, Clock, CheckCircle } from 'lucide-react';
 import { TimeNode, TimelineConfig, CategoryType } from '../types';
 import { getRelativeTime, getSerpentineCoords, generatePathData, formatDateFR } from '../utils';
@@ -34,6 +34,8 @@ export const SerpentineTimeline: React.FC<SerpentineTimelineProps> = ({
   onSelectNodeId,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [hoveredNode, setHoveredNode] = useState<TimeNode | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // Layout parameters for SVG
   const width = 1600; // Increased width for horizontal span
@@ -186,6 +188,12 @@ export const SerpentineTimeline: React.FC<SerpentineTimelineProps> = ({
       onSelectNodeId(null);
     } else {
       onSelectNodeId(nodeId);
+      setTimeout(() => {
+        const el = document.getElementById(`accordion-node-${nodeId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
     }
   };
 
@@ -467,7 +475,25 @@ export const SerpentineTimeline: React.FC<SerpentineTimelineProps> = ({
                 const targetY = isCurveHigh ? node.y + wireLen : node.y - wireLen;
 
                 return (
-                  <g key={node.id} className="group cursor-pointer">
+                  <g 
+                    key={node.id} 
+                    className="group cursor-pointer"
+                    onMouseEnter={(e) => {
+                      setHoveredNode(node);
+                    }}
+                    onMouseMove={(e) => {
+                      const container = containerRef.current;
+                      if (container) {
+                        const rect = container.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        setTooltipPos({ x, y });
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredNode(null);
+                    }}
+                  >
                     
                     {/* Vertical connecting wire at 90 degrees */}
                     <line
@@ -483,78 +509,78 @@ export const SerpentineTimeline: React.FC<SerpentineTimelineProps> = ({
 
                     {/* Distinctive shapes for milestone points */}
                     {node.type === 'milestone' ? (
-                      // Diamond for Milestones
+                      // Diamond for Milestones (shrunk/retreci)
                       <g onClick={() => handleToggleAccordion(node.id)}>
                         {isSelected && (
                           <polygon
-                            points={`${node.x},${node.y - 12} ${node.x + 12},${node.y} ${node.x},${node.y + 12} ${node.x - 12},${node.y}`}
+                            points={`${node.x},${node.y - 10} ${node.x + 10},${node.y} ${node.x},${node.y + 10} ${node.x - 10},${node.y}`}
                             fill="none"
                             stroke={activeColor}
-                            strokeWidth="3.5"
+                            strokeWidth="3"
                             opacity="0.5"
                             className="animate-ping"
                           />
                         )}
                         <polygon
-                          points={`${node.x},${node.y - 8.5} ${node.x + 8.5},${node.y} ${node.x},${node.y + 8.5} ${node.x - 8.5},${node.y}`}
+                          points={`${node.x},${node.y - 5.5} ${node.x + 5.5},${node.y} ${node.x},${node.y + 5.5} ${node.x - 5.5},${node.y}`}
                           fill="#FFFFFF"
                           stroke={activeColor}
-                          strokeWidth={isSelected ? '4' : '2.5'}
+                          strokeWidth={isSelected ? '3.5' : '1.8'}
                           className="transition-all duration-200 hover:scale-125"
                         />
                         <polygon
-                          points={`${node.x},${node.y - 4} ${node.x + 4},${node.y} ${node.x},${node.y + 4} ${node.x - 4},${node.y}`}
+                          points={`${node.x},${node.y - 2.5} ${node.x + 2.5},${node.y} ${node.x},${node.y + 2.5} ${node.x - 2.5},${node.y}`}
                           fill={catConfig.pin}
                         />
                       </g>
                     ) : node.type === 'project' ? (
-                      // Rounded square for Projects
+                      // Rounded square for Projects (shrunk/retreci)
                       <g onClick={() => handleToggleAccordion(node.id)}>
                         {isSelected && (
                           <rect
-                            x={node.x - 7.5}
-                            y={node.y - 7.5}
-                            width="15"
-                            height="15"
-                            rx="3"
+                            x={node.x - 5.5}
+                            y={node.y - 5.5}
+                            width="11"
+                            height="11"
+                            rx="2"
                             fill="none"
                             stroke={activeColor}
-                            strokeWidth="3.5"
+                            strokeWidth="3"
                             opacity="0.5"
                             className="animate-ping"
                           />
                         )}
                         <rect
-                          x={node.x - 5.5}
-                          y={node.y - 5.5}
-                          width="11"
-                          height="11"
-                          rx="2.5"
+                          x={node.x - 3.5}
+                          y={node.y - 3.5}
+                          width="7"
+                          height="7"
+                          rx="1.5"
                           fill="#FFFFFF"
                           stroke={activeColor}
-                          strokeWidth={isSelected ? '4' : '2.5'}
+                          strokeWidth={isSelected ? '3.5' : '1.8'}
                           className="transition-all duration-200 hover:scale-125"
                         />
                         <rect
-                          x={node.x - 2.5}
-                          y={node.y - 2.5}
-                          width="5"
-                          height="5"
-                          rx="1"
+                          x={node.x - 1.5}
+                          y={node.y - 1.5}
+                          width="3"
+                          height="3"
+                          rx="0.5"
                           fill={catConfig.pin}
                         />
                       </g>
                     ) : (
-                      // Circle for observations
+                      // Circle for observations (shrunk/retreci)
                       <g onClick={() => handleToggleAccordion(node.id)}>
                         {isSelected && (
                           <circle
                             cx={node.x}
                             cy={node.y}
-                            r="11"
+                            r="8"
                             fill="none"
                             stroke={activeColor}
-                            strokeWidth="3.5"
+                            strokeWidth="3"
                             opacity="0.5"
                             className="animate-ping"
                           />
@@ -562,16 +588,16 @@ export const SerpentineTimeline: React.FC<SerpentineTimelineProps> = ({
                         <circle
                           cx={node.x}
                           cy={node.y}
-                          r={isSelected ? '8' : '6'}
+                          r={isSelected ? '6' : '4'}
                           fill="#FFFFFF"
                           stroke={activeColor}
-                          strokeWidth={isSelected ? '4' : '2.5'}
+                          strokeWidth={isSelected ? '3.5' : '1.8'}
                           className="transition-all duration-200 hover:scale-125"
                         />
                         <circle
                           cx={node.x}
                           cy={node.y}
-                          r="2.5"
+                          r="1.5"
                           fill={catConfig.pin}
                         />
                       </g>
@@ -614,6 +640,41 @@ export const SerpentineTimeline: React.FC<SerpentineTimelineProps> = ({
               })}
             </svg>
           </div>
+
+          {/* Mouse Hover Description Tooltip */}
+          {hoveredNode && (
+            <div
+              className="absolute pointer-events-none bg-slate-950/95 text-white text-xs p-3 rounded-xl shadow-xl max-w-[240px] z-50 border border-slate-800/80 transition-all duration-75 backdrop-blur-xs"
+              style={{
+                left: `${tooltipPos.x + 15}px`,
+                top: `${tooltipPos.y + 15}px`,
+                transform: 'translateY(-50%)',
+              }}
+            >
+              <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded leading-none ${
+                  hoveredNode.category === 'Professional' ? 'bg-blue-950/80 text-blue-200 border border-blue-800/50' :
+                  hoveredNode.category === 'Personal' ? 'bg-purple-950/80 text-purple-200 border border-purple-800/50' :
+                  hoveredNode.category === 'Financial' ? 'bg-amber-950/80 text-amber-200 border border-amber-800/50' :
+                  hoveredNode.category === 'Health' ? 'bg-rose-950/80 text-rose-200 border border-rose-800/50' :
+                  'bg-emerald-950/80 text-emerald-200 border border-emerald-800/50'
+                }`}>
+                  {hoveredNode.category}
+                </span>
+                <span className="text-[9px] text-slate-400 font-mono font-medium">
+                  {formatDateFR(hoveredNode.date)}
+                </span>
+              </div>
+              <div className="font-bold text-white text-[11px] leading-tight">
+                {hoveredNode.title}
+              </div>
+              {hoveredNode.description && (
+                <div className="text-[10px] text-slate-300 font-normal mt-1.5 pt-1.5 border-t border-slate-800/60 leading-normal italic">
+                  {hoveredNode.description}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mt-2.5 flex items-center justify-center gap-6 text-[10px] text-gray-400 font-medium">

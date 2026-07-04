@@ -22,7 +22,7 @@ export default function App() {
   // Load state from localStorage or fallback to pre-populated examples
   const [nodes, setNodes] = useState<TimeNode[]>(() => {
     try {
-      const saved = localStorage.getItem('serpentine_vision_nodes');
+      const saved = localStorage.getItem('serpentine_vision_nodes_v4');
       return saved ? JSON.parse(saved) : INITIAL_NODES;
     } catch (e) {
       console.error("Erreur lors de la lecture du localStorage", e);
@@ -38,7 +38,7 @@ export default function App() {
 
   // Sync state to localStorage on every update
   useEffect(() => {
-    localStorage.setItem('serpentine_vision_nodes', JSON.stringify(nodes));
+    localStorage.setItem('serpentine_vision_nodes_v4', JSON.stringify(nodes));
   }, [nodes]);
 
   // Handler: Add new node
@@ -93,7 +93,7 @@ export default function App() {
       setNodes(INITIAL_NODES);
       setSelectedNodeId(null);
       setSelectedNodeToEdit(null);
-      localStorage.setItem('serpentine_vision_nodes', JSON.stringify(INITIAL_NODES));
+      localStorage.setItem('serpentine_vision_nodes_v4', JSON.stringify(INITIAL_NODES));
     }
   };
 
