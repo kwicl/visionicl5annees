@@ -1,0 +1,6 @@
+{
+  "name": "Kwicl vision",
+  "description": "Visualiseur d'objectifs et de projection temporelle en serpentin sur 5 ans avec code couleur dynamique.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
