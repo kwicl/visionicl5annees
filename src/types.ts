@@ -16,6 +16,7 @@ export interface TimeNode {
   category: CategoryType;
   notes: string;
   completed?: boolean;
+  prerequisites?: { id: string; text: string; completed: boolean }[];
 }
 
 export interface TimelineConfig {

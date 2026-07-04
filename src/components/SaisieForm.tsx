@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Tag, FileText, CheckCircle2, Circle, AlertCircle, PlusCircle, Check } from 'lucide-react';
+import { Calendar, Tag, FileText, CheckCircle2, Circle, AlertCircle, PlusCircle, Check, Plus, Trash2 } from 'lucide-react';
 import { TimeNode, ItemType, CategoryType, TimelineConfig } from '../types';
 
 interface SaisieFormProps {
@@ -45,6 +45,10 @@ export const SaisieForm: React.FC<SaisieFormProps> = ({
   const [notes, setNotes] = useState('');
   const [isPastDate, setIsPastDate] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  
+  // Custom strategy steps / prerequisites list state
+  const [prerequisites, setPrerequisites] = useState<{ id: string; text: string; completed: boolean }[]>([]);
+  const [newPrereqText, setNewPrereqText] = useState('');
 
   // Sync with edit mode when selectedNodeToEdit changes
   useEffect(() => {
@@ -55,6 +59,7 @@ export const SaisieForm: React.FC<SaisieFormProps> = ({
       setType(selectedNodeToEdit.type);
       setCategory(selectedNodeToEdit.category);
       setNotes(selectedNodeToEdit.notes);
+      setPrerequisites(selectedNodeToEdit.prerequisites || []);
     } else {
       resetForm();
     }
@@ -76,6 +81,31 @@ export const SaisieForm: React.FC<SaisieFormProps> = ({
     setType('project');
     setCategory('Professional');
     setNotes('');
+    setPrerequisites([]);
+    setNewPrereqText('');
+  };
+
+  const handleAddPrereq = () => {
+    if (!newPrereqText.trim()) return;
+    setPrerequisites((prev) => [
+      ...prev,
+      {
+        id: `prereq-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        text: newPrereqText.trim(),
+        completed: false,
+      }
+    ]);
+    setNewPrereqText('');
+  };
+
+  const handleRemovePrereq = (id: string) => {
+    setPrerequisites((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const handleTogglePrereqState = (id: string) => {
+    setPrerequisites((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, completed: !p.completed } : p))
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -91,6 +121,7 @@ export const SaisieForm: React.FC<SaisieFormProps> = ({
       category,
       notes: notes.trim(),
       completed: isPastDate,
+      prerequisites: prerequisites,
     };
 
     if (selectedNodeToEdit && onUpdateNode) {
@@ -265,6 +296,78 @@ export const SaisieForm: React.FC<SaisieFormProps> = ({
               );
             })}
           </div>
+        </div>
+
+        {/* Strategy Steps / Prerequisites */}
+        <div className="bg-gray-50/50 rounded-2xl p-4 border border-gray-200/60">
+          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+            Étapes de la stratégie / Prérequis de réalisation
+          </label>
+          <p className="text-[11px] text-gray-500 mb-3">
+            Définissez les prérequis ou étapes stratégiques pour ce jalon / projet. Ils s'afficheront sous forme de liste de cases à cocher interactives à l'ouverture du jalon.
+          </p>
+
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              placeholder="Ex: Obtenir l'accord des partenaires, Finaliser la maquette..."
+              value={newPrereqText}
+              onChange={(e) => setNewPrereqText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddPrereq();
+                }
+              }}
+              className="flex-1 px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-hidden transition-all text-gray-800"
+            />
+            <button
+              type="button"
+              onClick={handleAddPrereq}
+              className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white font-bold text-xs rounded-xl flex items-center gap-1 shrink-0 transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Ajouter
+            </button>
+          </div>
+
+          {prerequisites.length > 0 ? (
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+              {prerequisites.map((prereq) => (
+                <div
+                  key={prereq.id}
+                  className="flex items-center justify-between gap-3 p-2 bg-white border border-gray-100 rounded-xl shadow-xs transition-all hover:border-gray-200"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePrereqState(prereq.id)}
+                    className="flex items-center gap-2.5 text-left flex-1 cursor-pointer"
+                  >
+                    {prereq.completed ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    ) : (
+                      <Circle className="w-4 h-4 text-gray-300 shrink-0 hover:text-gray-400" />
+                    )}
+                    <span className={`text-xs font-medium leading-tight ${prereq.completed ? 'line-through text-gray-400 font-normal' : 'text-gray-700'}`}>
+                      {prereq.text}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePrereq(prereq.id)}
+                    className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                    title="Supprimer cet objectif intermédiaire"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] text-gray-400 italic text-center py-2">
+              Aucune étape stratégique renseignée pour le moment.
+            </p>
+          )}
         </div>
 
         {/* Observations / Notes Textarea */}

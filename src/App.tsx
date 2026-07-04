@@ -58,6 +58,11 @@ export default function App() {
     setActiveTab('view');
   };
 
+  // Handler: Quietly update a node without redirecting or clearing edit states (e.g. checkbox state toggle)
+  const handleUpdateNodeQuietly = (updatedNode: TimeNode) => {
+    setNodes((prev) => prev.map((node) => (node.id === updatedNode.id ? updatedNode : node)));
+  };
+
   // Handler: Delete node
   const handleDeleteNode = (id: string) => {
     if (window.confirm('Voulez-vous vraiment supprimer cet élément de votre timeline ?')) {
@@ -187,6 +192,7 @@ export default function App() {
                 onDeleteNode={handleDeleteNode}
                 selectedNodeId={selectedNodeId}
                 onSelectNodeId={setSelectedNodeId}
+                onUpdateNode={handleUpdateNodeQuietly}
               />
             </div>
           )}

@@ -15,6 +15,7 @@ interface SerpentineTimelineProps {
   onDeleteNode: (id: string) => void;
   selectedNodeId: string | null;
   onSelectNodeId: (id: string | null) => void;
+  onUpdateNode?: (node: TimeNode) => void;
 }
 
 const CATEGORY_COLORS: Record<CategoryType, { bg: string; border: string; text: string; pin: string }> = {
@@ -32,10 +33,22 @@ export const SerpentineTimeline: React.FC<SerpentineTimelineProps> = ({
   onDeleteNode,
   selectedNodeId,
   onSelectNodeId,
+  onUpdateNode,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<TimeNode | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  const handleTogglePrerequisite = (node: TimeNode, prereqId: string) => {
+    if (!onUpdateNode) return;
+    const updatedPrereqs = (node.prerequisites || []).map((p) =>
+      p.id === prereqId ? { ...p, completed: !p.completed } : p
+    );
+    onUpdateNode({
+      ...node,
+      prerequisites: updatedPrereqs,
+    });
+  };
 
   // Layout parameters for SVG
   const width = 1600; // Increased width for horizontal span
@@ -814,6 +827,71 @@ export const SerpentineTimeline: React.FC<SerpentineTimelineProps> = ({
                                 {node.notes}
                               </p>
                             </div>
+
+                            {/* Strategy Steps / Prerequisites Checklist */}
+                            {node.prerequisites && node.prerequisites.length > 0 && (
+                              <div className="bg-slate-50/75 border border-slate-100 p-3.5 rounded-xl space-y-2.5">
+                                <div className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1 font-mono">
+                                  <CheckCircle className="w-3 h-3 text-emerald-500" />
+                                  Étapes de la stratégie & Prérequis :
+                                </div>
+                                <div className="grid grid-cols-1 gap-2">
+                                  {node.prerequisites.map((prereq) => (
+                                    <div
+                                      key={prereq.id}
+                                      onClick={() => handleTogglePrerequisite(node, prereq.id)}
+                                      className={`flex items-start gap-2.5 p-2 bg-white border rounded-xl shadow-2xs transition-all cursor-pointer ${
+                                        prereq.completed
+                                          ? 'border-emerald-100/80 bg-emerald-50/10'
+                                          : 'border-gray-150/70 hover:border-gray-300'
+                                      }`}
+                                    >
+                                      <button
+                                        type="button"
+                                        className="shrink-0 mt-0.5"
+                                      >
+                                        {prereq.completed ? (
+                                          <div className="w-4 h-4 bg-emerald-500 rounded-md flex items-center justify-center text-white">
+                                            <svg className="w-2.5 h-2.5 stroke-2 stroke-current" fill="none" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                          </div>
+                                        ) : (
+                                          <div className="w-4 h-4 border border-gray-300 hover:border-gray-400 rounded-md bg-white" />
+                                        )}
+                                      </button>
+                                      <span className={`text-xs font-semibold leading-tight ${
+                                        prereq.completed
+                                          ? 'line-through text-gray-400 font-normal'
+                                          : 'text-gray-700'
+                                      }`}>
+                                        {prereq.text}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                                
+                                {/* Progress Bar for strategy steps */}
+                                {(() => {
+                                  const total = node.prerequisites.length;
+                                  const completedCount = node.prerequisites.filter((p) => p.completed).length;
+                                  const pct = Math.round((completedCount / total) * 100);
+                                  return (
+                                    <div className="pt-1.5 flex items-center gap-3">
+                                      <div className="flex-1 bg-gray-200/60 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                          className="bg-emerald-500 h-full transition-all duration-300 rounded-full"
+                                          style={{ width: `${pct}%` }}
+                                        />
+                                      </div>
+                                      <span className="text-[10px] text-gray-500 font-bold font-mono">
+                                        {completedCount}/{total} ({pct}%)
+                                      </span>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            )}
 
                             <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-50">
                               <button
